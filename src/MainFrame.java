@@ -6,7 +6,10 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.util.Random;
 
-public class MainFrame {
+/**
+ * Classe principale per disegnare diagrammi di Voronoi
+ */
+class MainFrame {
 
     private JPanel pnlContainer;
     private JButton btnDraw;
@@ -15,12 +18,12 @@ public class MainFrame {
     private JLabel lblVertici;
     private boolean needRepaint = false;
 
-    int maxVertex = 20;
+    private int maxVertex = 20;
 
-    ColorModel colorModel = createColorModel();
-    BufferedImage img;
+    private final ColorModel colorModel = createColorModel();
+    private BufferedImage img;
 
-    public MainFrame() {
+    private MainFrame() {
         btnDraw.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -32,12 +35,12 @@ public class MainFrame {
         pnlVoronoi.addComponentListener(new ComponentListener() {
             @Override
             public void componentResized(ComponentEvent e) {
-                needRepaint=true;
+                needRepaint = true;
             }
 
             @Override
             public void componentMoved(ComponentEvent e) {
-                needRepaint=true;
+                needRepaint = true;
             }
 
             @Override
@@ -47,7 +50,7 @@ public class MainFrame {
 
             @Override
             public void componentHidden(ComponentEvent e) {
-                needRepaint=true;
+                needRepaint = true;
             }
         });
 
@@ -58,7 +61,7 @@ public class MainFrame {
 
         // Allungo la dimensione orizzontale a tre volte di quelle disegnate
         Dimension prefSize = ((JSpinner.DefaultEditor) spnMaxVertici.getEditor()).getTextField().getPreferredSize();
-        ((JSpinner.DefaultEditor) spnMaxVertici.getEditor()).getTextField().setPreferredSize(new Dimension(prefSize.width*3,prefSize.height));
+        ((JSpinner.DefaultEditor) spnMaxVertici.getEditor()).getTextField().setPreferredSize(new Dimension(prefSize.width * 3, prefSize.height));
 
         spnMaxVertici.addChangeListener(new ChangeListener() {
             @Override
@@ -67,8 +70,8 @@ public class MainFrame {
                 int val = (int) spinner.getValue();
 
                 // Sotto a 5 vertici non si scende
-                if (val<5){
-                    val=5;
+                if (val < 5) {
+                    val = 5;
                     spinner.setValue(5);
                 }
                 maxVertex = val;
@@ -91,8 +94,8 @@ public class MainFrame {
      */
     private void drawVoronoi() {
         Graphics2D g = (Graphics2D) pnlVoronoi.getGraphics();
-        int width = pnlVoronoi.getWidth()/2;
-        int height = pnlVoronoi.getHeight()/2;
+        int width = pnlVoronoi.getWidth() / 2;
+        int height = pnlVoronoi.getHeight() / 2;
         int displacementX = width / 10;
         int displacementY = height / 10;
 
@@ -103,10 +106,10 @@ public class MainFrame {
         int[] vertexX = new int[maxVertex];
         int[] vertexY = new int[maxVertex];
 
-        byte[] mappa_1 = new byte[width*height];
-        byte[] mappa_2 = new byte[width*height];
-        byte[] mappa_3 = new byte[width*height];
-        byte[] mappa_4 = new byte[width*height];
+        byte[] mappa_1 = new byte[width * height];
+        byte[] mappa_2 = new byte[width * height];
+        byte[] mappa_3 = new byte[width * height];
+        byte[] mappa_4 = new byte[width * height];
 
         // Vertici
         for (int i = 0; i < maxVertex; i++) {
@@ -118,62 +121,67 @@ public class MainFrame {
         }
 
         // Vriabili per i calcoli sui 4 subpanel
-        double distanza;
-        double [] distanze = new double[4];
-        double distanzaOld;
+        double[] distanze = new double[4];
         double[] distanzeOld = new double[4];
-        //int vertexNearest=0;
         int[] verticiNearest = new int[4];
+
+        float dx; // Precalcolo dei delta
+        float dy;
 
         // Ciclo sui pixel
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
 
-               // distanzaOld = 1e99;
-                for (int i = 0; i < 4 ; i++) {
-                    distanze[i]=0;
-                    distanzeOld[i]=1e99;
-                    verticiNearest[i]=0;
+                // distanzaOld = 1e99;
+                for (int i = 0; i < 4; i++) {
+                    distanze[i] = 0;
+                    distanzeOld[i] = 1e99;
+                    verticiNearest[i] = 0;
                 }
 
                 for (int vCounter = 0; vCounter < maxVertex; vCounter++) {
-
-                    distanze[0]=(x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]);
-                    distanze[1]=Math.sqrt((x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]));
-                    distanze[2]=Math.abs(x - vertexX[vCounter]) + Math.abs(y - vertexY[vCounter]) ;
-                    distanze[3]=Math.max(Math.abs(x - vertexX[vCounter]) , Math.abs(y - vertexY[vCounter])) ; // Chebyshev
+                    dx = x - vertexX[vCounter];
+                    dy = y - vertexY[vCounter];
+                    distanze[0] = dx*dx + dy*dy; //(x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]);
+                    distanze[1] = Math.sqrt(dx*dx+dy*dy);  //Math.sqrt((x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]));
+                    distanze[2] = Math.abs(dx) + Math.abs(dy) ; //Math.abs(x - vertexX[vCounter]) + Math.abs(y - vertexY[vCounter]);
+                    distanze[3] =  Math.max(Math.abs(dx), Math.abs(dy)) ; //Math.max(Math.abs(x - vertexX[vCounter]), Math.abs(y - vertexY[vCounter])); // Chebyshev
+//                    distanze[0] = (x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]);
+//                    distanze[1] = Math.sqrt((x - vertexX[vCounter]) * (x - vertexX[vCounter]) + (y - vertexY[vCounter]) * (y - vertexY[vCounter]));
+//                    distanze[2] = Math.abs(x - vertexX[vCounter]) + Math.abs(y - vertexY[vCounter]);
+//                    distanze[3] = Math.max(Math.abs(x - vertexX[vCounter]), Math.abs(y - vertexY[vCounter])); // Chebyshev
 
                     for (int i = 0; i < 4; i++) {
-                        if (distanze[i]<distanzeOld[i]){
-                            distanzeOld[i]= distanze[i];
-                            verticiNearest[i]=vCounter;
+                        if (distanze[i] < distanzeOld[i]) {
+                            distanzeOld[i] = distanze[i];
+                            verticiNearest[i] = vCounter;
                         }
                     }
                 }
 
-                mappa_1[x+ y*width]=(byte)verticiNearest[0];
-                mappa_2[x+ y*width]=(byte)verticiNearest[1];
-                mappa_3[x+ y*width]=(byte)verticiNearest[2];
-                mappa_4[x+ y*width]=(byte)verticiNearest[3];
+                mappa_1[x + y * width] = (byte) verticiNearest[0];
+                mappa_2[x + y * width] = (byte) verticiNearest[1];
+                mappa_3[x + y * width] = (byte) verticiNearest[2];
+                mappa_4[x + y * width] = (byte) verticiNearest[3];
 
             }
 
         }
 
-        int stringPosx=10;
-        int stringPosy=20;
+        int stringPosx = 10;
+        int stringPosy = 20;
         //g.setXORMode(Color.lightGray);
-        g.setFont(new Font("Dialog",Font.BOLD,12));
-        drawImage(g,mappa_1,width,height,0,0);
-        g.drawString("No squared root", stringPosx,stringPosy);
+        g.setFont(new Font("Dialog", Font.BOLD, 12));
+        drawImage(g, mappa_1, width, height, 0, 0);
+        g.drawString("No squared root", stringPosx, stringPosy);
 
-        drawImage(g,mappa_2,width,height,width,0);
-        g.drawString("Squared root", width+stringPosx,stringPosy);
+        drawImage(g, mappa_2, width, height, width, 0);
+        g.drawString("Squared root", width + stringPosx, stringPosy);
 
-        drawImage(g,mappa_3,width,height,0,height);
-        g.drawString("Simple abs", stringPosx,height+ stringPosy);
+        drawImage(g, mappa_3, width, height, 0, height);
+        g.drawString("Simple abs", stringPosx, height + stringPosy);
 
-        drawImage(g,mappa_4,width,height,width,height);
+        drawImage(g, mappa_4, width, height, width, height);
         g.drawString("Chebyshev", width + stringPosx, height + stringPosy);
 
 
@@ -181,9 +189,9 @@ public class MainFrame {
         for (int i = 0; i < maxVertex; i++) {
             g.setColor(Color.BLACK);
             g.fillOval(vertexX[i] - 2, vertexY[i] - 2, 4, 4);
-            g.fillOval(width+ vertexX[i] - 2, vertexY[i] - 2, 4, 4);
+            g.fillOval(width + vertexX[i] - 2, vertexY[i] - 2, 4, 4);
             g.fillOval(vertexX[i] - 2, height + vertexY[i] - 2, 4, 4);
-            g.fillOval(width+ vertexX[i] - 2, height+ vertexY[i] - 2, 4, 4);
+            g.fillOval(width + vertexX[i] - 2, height + vertexY[i] - 2, 4, 4);
             //g.drawLine(vertexX[i],vertexY[i],vertexX[i],vertexY[i]);
         }
     }
@@ -191,6 +199,7 @@ public class MainFrame {
 
     /**
      * Creal il modello di colore per la mappa di byte
+     *
      * @return
      */
     private ColorModel createColorModel() {
@@ -204,9 +213,9 @@ public class MainFrame {
         // Genera i colori casuali
         for (int i = 0; i < colors; i++) {
             rnd.nextBytes(rndBytes);
-            reds[i] = (byte) rndBytes[0] ;
-            greens[i] = (byte) rndBytes[1];
-            blues[i] = (byte) rndBytes[2];
+            reds[i]     = rndBytes[0];
+            greens[i]   =  rndBytes[1];
+            blues[i]    =   rndBytes[2];
 //            reds[i] = (byte) i;
 //            greens[i] = (byte) (i);
 //            blues[i] = (byte) i;
@@ -232,9 +241,9 @@ public class MainFrame {
         WritableRaster raster = Raster.createWritableRaster(sm, buffer, null);
 
         // TODO: se non rigenero l'immagine non prende le nuove dimensioni in caso di resizing ?!?!?!
-        if (img == null || needRepaint ) {
+        if (img == null || needRepaint) {
             img = new BufferedImage(colorModel, raster, false, null);
-            needRepaint=false;
+            needRepaint = false;
         } else {
             img.setData(raster);
         }
@@ -245,6 +254,7 @@ public class MainFrame {
 
     /**
      * Genera i vertici. TODO: uso futuro evetuale. Meglio generare dei vertici nello spazio [0,1] per poi rimapparli in fase di disegnp - Da fare
+     *
      * @param maxVertexLocal
      * @param vx
      * @param vy
@@ -254,7 +264,7 @@ public class MainFrame {
      * @param displacementX
      * @param displacementY
      */
-    private void generateVertex(int maxVertexLocal, int[] vx, int[] vy, Color[] colors, int width, int height, int displacementX, int displacementY){
+    private void generateVertex(int maxVertexLocal, int[] vx, int[] vy, Color[] colors, int width, int height, int displacementX, int displacementY) {
         // colori dei vertici
         Random rnd = new Random();
         for (int i = 0; i < maxVertexLocal; i++) {
